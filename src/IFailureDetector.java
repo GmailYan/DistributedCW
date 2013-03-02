@@ -1,3 +1,4 @@
+package src;
 interface IFailureDetector {
 	
 	/* Initiates communication tasks, e.g. sending heartbeats periodically */
