@@ -1,30 +1,28 @@
 package src;
-
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
-
-public class FailureDetector implements IFailureDetector {
+public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	Process p;
 	LinkedList<Integer> suspects;
 	Timer t;
-	static final int Delta = 1000; /* 1sec heart beat */
+
+	static final int Delta = 1000; /* 1sec */
 	
 	class PeriodicTask extends TimerTask {
 		public void run() {
-		p.broadcast("heartbeat", "null");
+			p.broadcast("heartbeat", "null");
 		}
 	}
-	
-	public FailureDetector(Process p) {
+
+	public EventuallyPerfectFailureDetector(Process p) {
 		this.p = p;
 		t = new Timer();
 		suspects = new LinkedList<Integer>();
 	}
-	
+
 	@Override
 	public void begin() {
 		t.schedule(new PeriodicTask(), 0, Delta);
@@ -33,7 +31,6 @@ public class FailureDetector implements IFailureDetector {
 	@Override
 	public void receive(Message m) {
 		Utils.out(p.pid, m.toString());
-		
 	}
 
 	@Override
@@ -48,7 +45,7 @@ public class FailureDetector implements IFailureDetector {
 
 	@Override
 	public void isSuspected(Integer process) {
-		return ;
+		return;
 	}
 
 }
