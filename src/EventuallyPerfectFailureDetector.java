@@ -7,6 +7,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	Process p;
 	LinkedList<Integer> suspects;
+	LinkedList<Integer> timeouts;
 	Timer t;
 
 	static final int Delta = 1000; /* 1sec */
@@ -21,6 +22,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		this.p = p;
 		t = new Timer();
 		suspects = new LinkedList<Integer>();
+		timeouts = new LinkedList<Integer>();
 	}
 
 	@Override
@@ -30,6 +32,8 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	@Override
 	public void receive(Message m) {
+		long delay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
+		long timeout = Delta + delay;
 		Utils.out(p.pid, m.toString());
 	}
 
