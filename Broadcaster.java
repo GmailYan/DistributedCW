@@ -1,4 +1,4 @@
-package src;
+
 import java.lang.Math;
 
 class Broadcaster extends Process {

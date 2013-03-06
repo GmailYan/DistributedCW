@@ -1,4 +1,5 @@
-package src;
+
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -15,6 +16,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 	class PeriodicTask extends TimerTask{
 		public void run() {
 			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
+			//Utils.out(p.getName()+" broadcasted heart beat at "+ new Date());
 		}	
 	}
 	
@@ -26,18 +28,18 @@ public class PerfectFailureDetector implements IFailureDetector {
 	
 	@Override
 	public void begin() {
-		t.schedule(new PeriodicTask(), 0, Delta);
+		t.scheduleAtFixedRate(new PeriodicTask(), 0, Delta);
 	}
 
 	@Override
 	public void receive(Message m) {
 		// Assume no mesage loss, so ignore case that message of a process never received
 		// if timeout < delta + delay, then suspect
-		long delay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
-		if(timeout < Delta + delay){
+		long realisedDelay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
+		if(timeout < Delta + realisedDelay){
 			suspects.add(m.getSource(), m.getSource());
 		}
-		Utils.out(p.pid, m.toString());
+		Utils.out(p.getName()+" receive heart beat at "+ new Date());
 	}
 
 	@Override
