@@ -1,5 +1,7 @@
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,13 +11,14 @@ import java.util.TimerTask;
 public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	Process p;
-	LinkedList<Integer> suspects;
+	private LinkedList<Integer> suspects;
 	// storing a series of message delay for each process,  process is identified by a Integer(Table key)
 	Hashtable<Integer,LinkedList<Long>> messageDelays;
 	
 	// one average delay for each process
 	Hashtable<Integer,Long> timeoutUsingAvgDelay;
 	Timer t;
+	private Integer nextLeader;
 
 	static final int Delta = 1000; /* 1sec */
 	
@@ -29,7 +32,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 	public EventuallyPerfectFailureDetector(Process p) {
 		this.p = p;
 		t = new Timer();
-		suspects = new LinkedList<Integer>();
+		setSuspects(new LinkedList<Integer>());
 		messageDelays = new Hashtable<Integer,LinkedList<Long>>();
 		timeoutUsingAvgDelay = new Hashtable<Integer,Long>();
 	}
@@ -61,12 +64,12 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	@Override
 	public boolean isSuspect(Integer pid) {
-		return suspects.contains(pid);
+		return getSuspects().contains(pid);
 	}
 
 	@Override
 	public int getLeader() {
-		return -1;
+		return this.nextLeader;
 	}
 
 	@Override
@@ -76,18 +79,43 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		
 		if(currentTime >= timeout){
 			Utils.out(String.format("Process %s been suspected",process));
-			suspects.add(process);
+			addSuspects(process);
 		}
 		
 		return;
 	}
 	
+	private void addSuspects(Integer process) {
+		LinkedList<Integer> sList = getSuspects();
+		sList.add(process);
+		setSuspects(sList);
+		
+		//suspect change trigger re calculating leader
+		RecalculatingLeader();
+	}
+
+	private void RecalculatingLeader() {
+		Enumeration<Integer> allProcess = messageDelays.keys();
+		ArrayList<Integer> allProcessList = Collections.list(allProcess);
+		allProcessList.removeAll(getSuspects());
+		Integer processWithHighestID = Collections.max(allProcessList); 
+		this.nextLeader = processWithHighestID;
+	}
+
 	private Long sum(List<Long> numbers) {
 		Long retSum = 0L;
 	    for(Number i : numbers) {
 	        retSum += i.longValue();
 	    }
 	    return retSum;
+	}
+
+	LinkedList<Integer> getSuspects() {
+		return suspects;
+	}
+
+	void setSuspects(LinkedList<Integer> suspects) {
+		this.suspects = suspects;
 	}
 
 }
