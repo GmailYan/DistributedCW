@@ -25,7 +25,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 	class PeriodicTask extends TimerTask {
 		public void run() {
 			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
-			//Utils.out(p.getName()+" broadcasted heart beat at "+ new Date());
+			//Utils.out(p.getName()+" broadcasted heart beat at "+ System.currentTimeMillis());
 		}
 	}
 
@@ -59,7 +59,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		Long timeout = System.currentTimeMillis() + 2*average;
 		timeoutUsingAvgDelay.put(senderProcess, timeout);
 		
-		//Utils.out("new timeout "+ new Date(timeout));
+		Utils.out(p.pid, m.toString());
 	}
 
 	@Override

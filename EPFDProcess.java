@@ -1,8 +1,8 @@
+public class EPFDProcess extends Process {
 
-public class P3 extends Process {
-	public P3(String name, int id, int size) {
+	public EPFDProcess(String name, int id, int size) {
 		super(name, id, size);
-		detector = new PerfectFailureDetector(this);
+		detector = new EventuallyPerfectFailureDetector(this);
 	}
 
 	private IFailureDetector detector;
@@ -22,9 +22,9 @@ public class P3 extends Process {
 		String name = args[0];
 		int id = Integer.parseInt(args[1]);
 		int n = Integer.parseInt(args[2]);
-		P3 p = new P3(name, id, n);
+		EPFDProcess p = new EPFDProcess(name, id, n);
 		p.registeR();
 		p.begin();
 	}
-	
+
 }

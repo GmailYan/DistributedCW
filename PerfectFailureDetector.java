@@ -1,5 +1,3 @@
-
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -9,7 +7,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 	Process p;
 	LinkedList<Integer> suspects;
 	Timer t;
-	long timeout = Delta + Utils.DELAY;
+	long timeout = Delta + 2 * Utils.DELAY;
 	
 	static final int Delta = 1000; /* 1sec */
 	
@@ -37,9 +35,9 @@ public class PerfectFailureDetector implements IFailureDetector {
 		// if timeout < delta + delay, then suspect
 		long realisedDelay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
 		if(timeout < Delta + realisedDelay){
-			suspects.add(m.getSource(), m.getSource());
+			suspects.add(m.getSource());
 		}
-		Utils.out(p.getName()+" receive heart beat at "+ new Date());
+		Utils.out(p.pid, m.toString());
 	}
 
 	@Override
