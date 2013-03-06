@@ -9,7 +9,7 @@ VERBOSE=true
 
 # If true, stdout is redirected to
 # log files, one per process.
-LOG=true
+LOG=false
 
 USAGE="./sysmanager.sh [start|stop|clear] [class] [#instances]"
 
