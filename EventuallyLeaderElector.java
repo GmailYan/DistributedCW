@@ -1,5 +1,10 @@
-
 public class EventuallyLeaderElector implements IFailureDetector {
+
+	Process p;
+	
+	public EventuallyLeaderElector(Process p) {
+		this.p = p;
+	}
 
 	@Override
 	public void begin() {
@@ -15,20 +20,17 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public boolean isSuspect(Integer process) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int getLeader() {
-		// TODO Auto-generated method stub
-		return 0;
+		return -1;
 	}
 
 	@Override
 	public void isSuspected(Integer process) {
-		// TODO Auto-generated method stub
-
+		return;
 	}
 
 }

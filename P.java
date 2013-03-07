@@ -1,5 +1,3 @@
-
-
 class P extends Process {
 	public P(String name, int pid, int n) {
 		super(name, pid, n);
