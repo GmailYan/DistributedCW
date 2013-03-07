@@ -1,7 +1,7 @@
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,55 +11,87 @@ import java.util.TimerTask;
 public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	Process p;
-	private LinkedList<Integer> suspects;
-	// storing a series of message delay for each process,  process is identified by a Integer(Table key)
-	Hashtable<Integer,LinkedList<Long>> messageDelays;
-	
+	HashSet<Integer> processes;
+	HashSet<Integer> alives;
+	LinkedList<Integer> suspects;
+	Timer heartbeatTimer;
+	Timer timeoutTimer;
+	long timeout = Delta;
+	long delay = 0L;
+	// storing a series of message delay for each process, process is identified
+	// by a Integer(Table key)
+	Hashtable<Integer, LinkedList<Long>> messageDelays;
+
 	// one average delay for each process
-	Hashtable<Integer,Long> timeoutUsingAvgDelay;
-	Timer t;
+	Hashtable<Integer, Long> timeoutUsingAvgDelay;
 	private Integer nextLeader;
 
 	static final int Delta = 1000; /* 1sec */
-	
+
 	class PeriodicTask extends TimerTask {
 		public void run() {
-			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
-			//Utils.out(p.getName()+" broadcasted heart beat at "+ System.currentTimeMillis());
+			p.broadcast("heartbeat",
+					String.format("%d", System.currentTimeMillis()));
+			timeoutTimer.schedule(new Timeout(), timeout);
+			Utils.out(p.pid, Long.toString(timeout));
 		}
+	}
+
+	class Timeout extends TimerTask {
+		public void run() {
+			for (Integer p : processes) {
+				if (!alives.contains(p) && !isSuspect(p)) {
+					suspects.add(p);
+				}
+				if (alives.contains(p) && isSuspect(p)) {
+					suspects.remove(p);
+				}
+			}
+
+			alives = new HashSet<Integer>();
+		}	
 	}
 
 	public EventuallyPerfectFailureDetector(Process p) {
 		this.p = p;
-		t = new Timer();
-		setSuspects(new LinkedList<Integer>());
-		messageDelays = new Hashtable<Integer,LinkedList<Long>>();
-		timeoutUsingAvgDelay = new Hashtable<Integer,Long>();
+		heartbeatTimer = new Timer();
+		timeoutTimer = new Timer();
+		processes = new HashSet<Integer>();
+		suspects = new LinkedList<Integer>();
+		alives = new HashSet<Integer>();
+		//messageDelays = new Hashtable<Integer, LinkedList<Long>>();
+		//timeoutUsingAvgDelay = new Hashtable<Integer, Long>();
 	}
 
 	@Override
 	public void begin() {
-		t.schedule(new PeriodicTask(), 0, Delta);
+		heartbeatTimer.schedule(new PeriodicTask(), 0, Delta);
 	}
 
 	@Override
 	public void receive(Message m) {
-		// upon receiving a heart beat message, update the timeout
-		int senderProcess = m.getSource();
-		long realisedDelay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
-		
+		delay = Math.max(delay, System.currentTimeMillis() - Long.parseLong(m.getPayload()));
+		timeout = Delta + 2 * delay;
+		processes.add(m.getSource());
+		alives.add(m.getSource());
+		/*int senderProcess = m.getSource();
+		long realisedDelay = System.currentTimeMillis()
+				- Long.parseLong(m.getPayload());
+
 		// if the history does not exist then create empty list
-		if(!messageDelays.containsKey(senderProcess)){
+		if (!messageDelays.containsKey(senderProcess)) {
 			messageDelays.put(senderProcess, new LinkedList<Long>());
 		}
 		LinkedList<Long> messageHistory = messageDelays.get(senderProcess);
 		messageHistory.add(realisedDelay);
 		Long sumMessageDelay = sum(messageHistory);
-		Long average = (sumMessageDelay / messageHistory.size() );
-		Long timeout = System.currentTimeMillis() + 2*average;
+		Long average = (sumMessageDelay / messageHistory.size());
+		Long timeout = System.currentTimeMillis() + 2 * average;
 		timeoutUsingAvgDelay.put(senderProcess, timeout);
+		*/
 		
 		Utils.out(p.pid, m.toString());
+		//Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
@@ -76,21 +108,21 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 	public void isSuspected(Integer process) {
 		Long timeout = timeoutUsingAvgDelay.get(process);
 		Long currentTime = System.currentTimeMillis();
-		
-		if(currentTime >= timeout){
-			Utils.out(String.format("Process %s been suspected",process));
+
+		if (currentTime >= timeout) {
+			Utils.out(String.format("Process %s been suspected", process));
 			addSuspects(process);
 		}
-		
+
 		return;
 	}
-	
+
 	private void addSuspects(Integer process) {
 		LinkedList<Integer> sList = getSuspects();
 		sList.add(process);
 		setSuspects(sList);
-		
-		//suspect change trigger re calculating leader
+
+		// suspect change trigger re calculating leader
 		RecalculatingLeader();
 	}
 
@@ -98,16 +130,16 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		Enumeration<Integer> allProcess = messageDelays.keys();
 		ArrayList<Integer> allProcessList = Collections.list(allProcess);
 		allProcessList.removeAll(getSuspects());
-		Integer processWithHighestID = Collections.max(allProcessList); 
+		Integer processWithHighestID = Collections.max(allProcessList);
 		this.nextLeader = processWithHighestID;
 	}
 
 	private Long sum(List<Long> numbers) {
 		Long retSum = 0L;
-	    for(Number i : numbers) {
-	        retSum += i.longValue();
-	    }
-	    return retSum;
+		for (Number i : numbers) {
+			retSum += i.longValue();
+		}
+		return retSum;
 	}
 
 	LinkedList<Integer> getSuspects() {
