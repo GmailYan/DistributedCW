@@ -1,3 +1,4 @@
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -5,8 +6,11 @@ import java.util.TimerTask;
 public class PerfectFailureDetector implements IFailureDetector {
 
 	Process p;
+	HashSet<Integer> processes;
 	LinkedList<Integer> suspects;
-	Timer t;
+	HashSet<Integer> alives;
+	Timer heartbeatTimer;
+	Timer timeoutTimer;
 	long timeout = Delta + 2 * Utils.DELAY;
 	
 	static final int Delta = 1000; /* 1sec */
@@ -14,30 +18,44 @@ public class PerfectFailureDetector implements IFailureDetector {
 	class PeriodicTask extends TimerTask{
 		public void run() {
 			p.broadcast("heartbeat", String.format("%d", System.currentTimeMillis()));
-			//Utils.out(p.getName()+" broadcasted heart beat at "+ new Date());
+			timeoutTimer.schedule(new Timeout(), timeout);
 		}	
+	}
+	
+	class Timeout extends TimerTask{
+		public void run() {
+			for(Integer p : processes){
+				if(!alives.contains(p) && !isSuspect(p)){
+					suspects.add(p);
+				}
+			}
+			
+			alives = new HashSet<Integer>();
+			}	
 	}
 	
 	public PerfectFailureDetector (Process p){
 		this.p = p;
-		t = new Timer();
+		heartbeatTimer = new Timer();
+		timeoutTimer = new Timer();
+		processes = new HashSet<Integer>();
 		suspects = new LinkedList<Integer>();
+		alives = new HashSet<Integer>();
 	}
 	
 	@Override
 	public void begin() {
-		t.scheduleAtFixedRate(new PeriodicTask(), 0, Delta);
+		heartbeatTimer.schedule(new PeriodicTask(), 0, Delta);
+
 	}
 
 	@Override
 	public void receive(Message m) {
-		// Assume no mesage loss, so ignore case that message of a process never received
-		// if timeout < delta + delay, then suspect
-		long realisedDelay = System.currentTimeMillis() - Long.parseLong(m.getPayload());
-		if(timeout < Delta + realisedDelay){
-			suspects.add(m.getSource());
-		}
+		processes.add(m.getSource());
+		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
+		Utils.out(p.pid, Integer.toString(suspects.size()));
+
 	}
 
 	@Override

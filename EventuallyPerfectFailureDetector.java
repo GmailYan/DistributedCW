@@ -39,7 +39,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	@Override
 	public void begin() {
-		t.scheduleAtFixedRate(new PeriodicTask(), 0, Delta);
+		t.schedule(new PeriodicTask(), 0, Delta);
 	}
 
 	@Override
