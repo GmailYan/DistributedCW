@@ -1,12 +1,16 @@
 
 public class SFDProcess extends Process {
 
-	public SFDProcess(String name, int pid, int n) {
+	int pid;
+	private int x;
+	public SFDProcess(String name, int pid, int n, int x) {
 		super(name, pid, n);
-		detector = new StrongFailureDetector();
+		this.pid = pid;
+		this.setX(x);
+		detector = new StrongFailureDetector(this);
 	}
 
-	private IFailureDetector detector;
+	private static StrongFailureDetector detector;
 	
 	public void begin() {
 		detector.begin();
@@ -16,6 +20,8 @@ public class SFDProcess extends Process {
 		String type = m.getType();
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
+		} else if (type.equals("VAL") ) {
+			detector.m.put(m.getSource(),m);
 		}
 	}
 	
@@ -23,9 +29,23 @@ public class SFDProcess extends Process {
 		String name = args[0];
 		int id = Integer.parseInt(args[1]);
 		int n = Integer.parseInt(args[2]);
-		PFDProcess p = new PFDProcess(name, id, n);
+		int x = Integer.parseInt(args[3]);
+		// for consensus: read x implies that there is an extra command line argument for each process
+		
+		SFDProcess p = new SFDProcess(name, id, n, x);
 		p.registeR();
 		p.begin();
+		x = detector.Consensus();
+		Utils.out("End of consensus, "+x+" is decided");
+		
+	}
+
+	int getX() {
+		return x;
+	}
+
+	void setX(int x) {
+		this.x = x;
 	}
 
 }

@@ -55,8 +55,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		Utils.out(p.pid, Integer.toString(suspects.size()));
-
+		// Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
