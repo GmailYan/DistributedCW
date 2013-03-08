@@ -6,9 +6,9 @@ import java.util.TimerTask;
 public class PerfectFailureDetector implements IFailureDetector {
 
 	Process p;
-	HashSet<Integer> processes;
-	HashSet<Integer> alives;
-	LinkedList<Integer> suspects;
+	public HashSet<Integer> processes;
+	public HashSet<Integer> alives;
+	public LinkedList<Integer> suspects;
 	Timer heartbeatTimer;
 	Timer timeoutTimer;
 	long timeout = Delta + 2 * Utils.DELAY;
