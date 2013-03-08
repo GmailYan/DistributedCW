@@ -11,7 +11,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 	public LinkedList<Integer> suspects;
 	Timer heartbeatTimer;
 	Timer timeoutTimer;
-	long timeout = Delta + 2 * Utils.DELAY;
+	int timeout = Delta + 2 * Utils.DELAY;
 
 	static final int Delta = 1000; /* 1sec */
 
@@ -55,7 +55,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
+		Utils.out(p.pid, Integer.toString(suspects.size()));
 
 	}
 

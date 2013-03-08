@@ -12,15 +12,16 @@ public class EventuallyLeaderElector implements IFailureDetector {
 	Timer heartbeatTimer;
 	Timer timeoutTimer;
 	long timeout = Delta;
-	long delay = 0L;
-	int leader;
+	long delay = 0;
+	int leader = 0;
 
 	static final int Delta = 1000; /* 1sec */
 
 	class PeriodicTask extends TimerTask {
 		public void run() {
-			p.broadcast("heartbeat",
-					String.format("%d", System.currentTimeMillis()));
+			// printing timeout or leader causes random changes in timeout value
+			p.broadcast("leader", String.format("%d", System.currentTimeMillis()));
+			System.out.println(timeout);
 			timeoutTimer.schedule(new Timeout(), timeout);
 		}
 	}
@@ -35,14 +36,15 @@ public class EventuallyLeaderElector implements IFailureDetector {
 					suspects.remove(p);
 				}
 			}
-
+			
+			leader = getLeader();
 			alives = new HashSet<Integer>();
 		}
 	}
 
 	public EventuallyLeaderElector(Process p) {
 		this.p = p;
-		this.leader = p.pid;
+		leader = p.pid;
 		heartbeatTimer = new Timer();
 		timeoutTimer = new Timer();
 		processes = new HashSet<Integer>();
@@ -57,13 +59,17 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public void receive(Message m) {
-		delay = Math.max(delay,
-				System.currentTimeMillis() - Long.parseLong(m.getPayload()));
-		timeout = Delta + 2 * delay;
+		HashSet<Integer> s = alives;
+		s.retainAll(suspects);
+		if (s.isEmpty()) {
+			delay = Math.max(delay, System.currentTimeMillis()
+					- Long.parseLong(m.getPayload()));
+			timeout = Delta + 2 * delay;
+		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
+		//Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
@@ -73,11 +79,13 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public int getLeader() {
+		//Utils.out(p.pid, Integer.toString(suspects.size()));
 		int res = this.isSuspect(leader) ? p.pid : leader;
-		for (int pid : alives){
+		for (int pid : alives) {
 			res = Math.max(res, pid);
 		}
-		
+
+		leader = res;
 		return res;
 	}
 

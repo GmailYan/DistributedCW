@@ -2,7 +2,7 @@ public class ELEProcess extends Process {
 
 	public ELEProcess(String name, int id, int size) {
 		super(name, id, size);
-		elector = new EventuallyPerfectFailureDetector(this);
+		elector = new EventuallyLeaderElector(this);
 	}
 
 	private IFailureDetector elector;

@@ -12,7 +12,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 	Timer heartbeatTimer;
 	Timer timeoutTimer;
 	long timeout = Delta;
-	long delay = 0L;
+	long delay = 0;
 
 	static final int Delta = 1000; /* 1sec */
 
@@ -34,7 +34,7 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 					suspects.remove(p);
 				}
 			}
-
+			
 			alives = new HashSet<Integer>();
 		}
 	}
@@ -55,13 +55,17 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	@Override
 	public void receive(Message m) {
-		delay = Math.max(delay,
-				System.currentTimeMillis() - Long.parseLong(m.getPayload()));
-		timeout = Delta + 2 * delay;
+		HashSet<Integer> s = alives;
+		s.retainAll(suspects);
+		if (s.isEmpty()) {
+			delay = Math.max(delay, System.currentTimeMillis()
+					- Long.parseLong(m.getPayload()));
+			timeout = Delta + 2 * delay;
+		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
+		//Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
