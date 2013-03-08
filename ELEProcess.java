@@ -1,13 +1,18 @@
 public class ELEProcess extends Process {
 
-	public ELEProcess(String name, int pid, int n) {
-		super(name, pid, n);
-		elector = new EventuallyLeaderElector(this);
+	public ELEProcess(String name, int id, int size) {
+		super(name, id, size);
+		elector = new EventuallyPerfectFailureDetector(this);
 	}
 
 	private IFailureDetector elector;
-	
+
 	public void begin() {
+		elector.begin();
+	}
+
+	public synchronized void receive(Message m) {
+		elector.receive(m);
 	}
 
 	public static void main(String[] args) {
@@ -18,4 +23,5 @@ public class ELEProcess extends Process {
 		p.registeR();
 		p.begin();
 	}
+
 }
