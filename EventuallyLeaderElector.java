@@ -1,41 +1,3 @@
-<<<<<<< HEAD
-public class EventuallyLeaderElector implements IFailureDetector {
-
-	Process p;
-	
-	public EventuallyLeaderElector(Process p) {
-		this.p = p;
-	}
-
-	@Override
-	public void begin() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void receive(Message m) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public boolean isSuspect(Integer process) {
-		return false;
-	}
-
-	@Override
-	public int getLeader() {
-		return -1;
-	}
-
-	@Override
-	public void isSuspected(Integer process) {
-		return;
-	}
-
-}
-=======
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Timer;
@@ -124,4 +86,3 @@ public class EventuallyLeaderElector implements IFailureDetector {
 		return;
 	}
 }
->>>>>>> 5ebf875e7de32293fe292f73afb53cfb7972ca1a
