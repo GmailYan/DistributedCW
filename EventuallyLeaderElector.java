@@ -20,8 +20,8 @@ public class EventuallyLeaderElector implements IFailureDetector {
 	class PeriodicTask extends TimerTask {
 		public void run() {
 			// printing timeout or leader causes random changes in timeout value
-			p.broadcast("leader", String.format("%d", System.currentTimeMillis()));
-			System.out.println(timeout);
+			p.broadcast("heartbeat",
+					String.format("%d", System.currentTimeMillis()));
 			timeoutTimer.schedule(new Timeout(), timeout);
 		}
 	}
@@ -36,7 +36,7 @@ public class EventuallyLeaderElector implements IFailureDetector {
 					suspects.remove(p);
 				}
 			}
-			
+
 			leader = getLeader();
 			alives = new HashSet<Integer>();
 		}
@@ -62,14 +62,16 @@ public class EventuallyLeaderElector implements IFailureDetector {
 		HashSet<Integer> s = alives;
 		s.retainAll(suspects);
 		if (s.isEmpty()) {
-			delay = Math.max(delay, System.currentTimeMillis()
-					- Long.parseLong(m.getPayload()));
+			delay = Math
+					.max(delay,
+							System.currentTimeMillis()
+									- Long.parseLong(m.getPayload()));
 			timeout = Delta + 2 * delay;
 		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		//Utils.out(p.pid, Integer.toString(suspects.size()));
+		// Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
@@ -79,10 +81,14 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public int getLeader() {
-		//Utils.out(p.pid, Integer.toString(suspects.size()));
+		// Utils.out(p.pid, Integer.toString(suspects.size()));
 		int res = this.isSuspect(leader) ? p.pid : leader;
 		for (int pid : alives) {
 			res = Math.max(res, pid);
+		}
+
+		if (leader != res) {
+			Utils.out(p.pid, "leader : " + Integer.toString(res));
 		}
 
 		leader = res;

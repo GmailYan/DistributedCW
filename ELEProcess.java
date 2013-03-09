@@ -12,7 +12,10 @@ public class ELEProcess extends Process {
 	}
 
 	public synchronized void receive(Message m) {
-		elector.receive(m);
+		String type = m.getType();
+		if (type.equals("heartbeat")) {
+			elector.receive(m);
+		}
 	}
 
 	public static void main(String[] args) {
