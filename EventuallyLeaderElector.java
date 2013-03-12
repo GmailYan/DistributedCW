@@ -58,13 +58,11 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public void receive(Message m) {
-//		HashSet<Integer> s = alives;
-//		s.retainAll(suspects);
-//		if (s.isEmpty()) {
+		if (isSuspect(m.getSource())) {
 			delay = Math.max(delay, System.currentTimeMillis()
 					- Long.parseLong(m.getPayload()));
 			timeout = Delta + 2 * delay;
-//		}
+		}
 
 		alives.add(m.getSource());
 		if(!processes.contains(m.getSource())){

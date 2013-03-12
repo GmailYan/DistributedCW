@@ -56,13 +56,12 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 
 	@Override
 	public void receive(Message m) {
-//		HashSet<Integer> s = alives;
-//		s.retainAll(suspects);
-//		if (s.isEmpty()) {
+
+		if (isSuspect(m.getSource())) {
 			delay = Math.max(delay, System.currentTimeMillis()
 					- Long.parseLong(m.getPayload()));
 			timeout = Delta + 2 * delay;
-//		}
+		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
