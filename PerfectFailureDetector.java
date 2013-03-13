@@ -17,8 +17,7 @@ public class PerfectFailureDetector implements IFailureDetector {
 
 	class PeriodicTask extends TimerTask {
 		public void run() {
-			p.broadcast("heartbeat",
-					String.format("%d", System.currentTimeMillis()));
+			p.broadcast("heartbeat", "null");
 			timeoutTimer.schedule(new Timeout(), timeout);
 		}
 	}
