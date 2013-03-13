@@ -61,7 +61,7 @@ public class EventuallyLeaderElector implements IFailureDetector {
 		if (isSuspect(m.getSource())) {
 			delay = Math.max(delay, System.currentTimeMillis()
 					- Long.parseLong(m.getPayload()));
-			timeout = Delta + 2 * delay;
+			timeout = Delta + delay;
 		}
 
 		alives.add(m.getSource());
@@ -70,7 +70,6 @@ public class EventuallyLeaderElector implements IFailureDetector {
 			leader = getLeader();
 		}
 		Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
@@ -80,7 +79,6 @@ public class EventuallyLeaderElector implements IFailureDetector {
 
 	@Override
 	public int getLeader() {
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
 		int res = this.isSuspect(leader) ? p.pid : leader;
 		for (int pid : alives) {
 			res = Math.max(res, pid);

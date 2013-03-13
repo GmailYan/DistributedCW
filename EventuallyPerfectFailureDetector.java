@@ -20,7 +20,6 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		public void run() {
 			p.broadcast("heartbeat",
 					String.format("%d", System.currentTimeMillis()));
-//			System.out.println(timeout);
 			timeoutTimer.schedule(new Timeout(), timeout);
 		}
 	}
@@ -60,12 +59,11 @@ public class EventuallyPerfectFailureDetector implements IFailureDetector {
 		if (isSuspect(m.getSource())) {
 			delay = Math.max(delay, System.currentTimeMillis()
 					- Long.parseLong(m.getPayload()));
-			timeout = Delta + 2 * delay;
+			timeout = Delta + delay;
 		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
 		Utils.out(p.pid, m.toString());
-		//Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
