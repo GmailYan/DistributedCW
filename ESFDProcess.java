@@ -10,6 +10,7 @@ public class ESFDProcess extends Process {
 	}
 
 	private EventuallyStrongFailureDetector detector;
+	private boolean verbose = false;
 
 	public void begin() {
 		detector.begin();
@@ -43,7 +44,7 @@ public class ESFDProcess extends Process {
 
 	private void Consensus() {
 		int x = detector.Consensus();
-		Utils.out("End of consensus, "+x+" is decided");
+		if(verbose)Utils.out("End of consensus, "+x+" is decided");
 	}
 
 	public int getX() {

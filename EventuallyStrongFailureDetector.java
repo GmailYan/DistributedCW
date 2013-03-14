@@ -23,6 +23,7 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 	Hashtable<Integer, Hashtable<Integer, Integer>> valMessages = new Hashtable<Integer, Hashtable<Integer, Integer>>();
 
 	public Hashtable<Integer, Message> outcome = new Hashtable<Integer, Message>();
+	private boolean verbose = false;
 
 	static final int Delta = 1000; /* 1sec */
 
@@ -72,12 +73,10 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 					.max(delay,
 							System.currentTimeMillis()
 									- Long.parseLong(m.getPayload()));
-			timeout = Delta + 2 * delay;
+			timeout = Delta + delay;
 		}
 		processes.add(m.getSource());
 		alives.add(m.getSource());
-		// Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
 	}
 
 	@Override
@@ -104,26 +103,19 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 		while (true) {
 			r++;
 			int c = (r % n) + 1; // pick the candidate of this round
-
 			SendMessage(p, "VAL", x, r, c);
-
 			// if current process is coordinator
 			if (i == c) {
-
 				Hashtable<Integer, Integer> decisions = uponReceiveMessages(r);
-
 				Integer majority = Majority(decisions);
-
 				// everyone decide the same value, so only 1 entry
 				HashSet<Integer> uniqueValues = new HashSet<Integer>();
 				for(Integer each: decisions.values()){
 					uniqueValues.add(each);
 				}
 				boolean d = uniqueValues.size() == 1;
-
 				String payload = String.format("%b,%d,%d", d, majority, r);
 				p.broadcast("OUTCOME", payload);
-
 				if (d) {
 					p.setX(majority);
 					x = majority;
@@ -133,13 +125,10 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 						break;
 					}
 				}
-
 			}
-
 			// broadcast set does not include itself, do not block wait for
 			// message from itself
 			if (c != i) {
-
 				Message outcome = collectMessageFromR(c, r);
 				if (outcome != null) {
 					// if null then suspected process, outcome is null
@@ -148,7 +137,6 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 					boolean d = getBoolFromPayload(payload);
 					p.setX(x);
 					x = decide;
-
 					if (d) {
 						// decide x
 						p.setX(x);
@@ -159,9 +147,7 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 							break;
 						}
 					}
-
 				}
-
 			}
 		}
 		return x;
@@ -213,10 +199,8 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 	// the decisions are from other process, majority must include itself
 	private Integer Majority(Hashtable<Integer, Integer> decisions) {
 		HashMap<Integer, Integer> frequency = new HashMap<Integer, Integer>();
-
 		// include process itself in deciding majority
 		frequency.put(p.getX(), 1);
-
 		for (Integer each : decisions.values()) {
 			int f = 0;
 			if (frequency.containsKey(each)) {
@@ -224,7 +208,6 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 			}
 			frequency.put(each, f + 1);
 		}
-
 		Integer maxKey = null;
 		Integer maxValue = 0;
 		for (int key : frequency.keySet()) {
@@ -233,12 +216,10 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 				maxKey = key;
 			}
 		}
-
 		return maxKey;
 	}
 
 	private Hashtable<Integer, Integer> uponReceiveMessages(int r) {
-
 		Hashtable<Integer, Integer> decisionValues = new Hashtable<Integer, Integer>();
 		while (true) {
 
@@ -249,15 +230,13 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 				decisionValues = valMessages.get(r);
 			}
 			if (decisionValues != null && decisionValues.size() >= n - F - 1) {
-				Utils.out(p.getPid(), "upon Receive enough VAL Messages");
+				if(verbose)Utils.out(p.getPid(), "upon Receive enough "+(n-F-1)+" VAL Messages");
 				break;
-
 			}
 
 			try {
 				Thread.sleep(100L);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -272,7 +251,7 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 		m.setType(type);
 		m.setPayload(x + "," + r);
 		parent.unicast(m);
-		Utils.out(
+		if(verbose)Utils.out(
 				parent.getPid(),
 				String.format("send out VAL message to %d of round %d",
 						m.getDestination(), r));
@@ -280,7 +259,7 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 
 	public void addConsensusMessage(Message m) {
 		synchronized (valMessages) {
-			Utils.out(p.pid, String.format(
+			if(verbose)Utils.out(p.pid, String.format(
 					"receive VAL message from %d with payload: %s",
 					m.getSource(), m.getPayload()));
 
@@ -305,7 +284,7 @@ public class EventuallyStrongFailureDetector implements IFailureDetector {
 
 	public void addOutcomeMessage(Message m) {
 		synchronized (outcome) {
-			Utils.out(p.pid, String.format(
+			if(verbose)Utils.out(p.pid, String.format(
 					"receive OUTCOME message from %d with payload: %s",
 					m.getSource(), m.getPayload()));
 			outcome.put(m.getSource(), m);

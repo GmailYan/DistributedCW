@@ -7,7 +7,9 @@ import java.util.TimerTask;
 public class StrongFailureDetector implements IFailureDetector {
 
 	SFDProcess process;
-	public Hashtable<Integer,Message> m = new Hashtable<Integer,Message>();
+	
+	// the key integer is round number
+	public Hashtable<Integer, Message> valMessages = new Hashtable<Integer, Message>();
 	Process p;
 	public HashSet<Integer> processes;
 	public HashSet<Integer> alives;
@@ -15,6 +17,9 @@ public class StrongFailureDetector implements IFailureDetector {
 	Timer heartbeatTimer;
 	Timer timeoutTimer;
 	long timeout = Delta + 2 * Utils.DELAY;
+
+	// enable debug output to console by set this to true
+	private boolean verbose = false;
 
 	static final int Delta = 1000; /* 1sec */
 
@@ -58,9 +63,6 @@ public class StrongFailureDetector implements IFailureDetector {
 	public void receive(Message m) {
 		processes.add(m.getSource());
 		alives.add(m.getSource());
-		// Utils.out(p.pid, m.toString());
-		// Utils.out(p.pid, Integer.toString(suspects.size()));
-
 	}
 
 	@Override
@@ -80,36 +82,40 @@ public class StrongFailureDetector implements IFailureDetector {
 
 	// consensus using rotating coordinator algorithm
 	public int Consensus() {
-
-		for (int r = 1; r <= 3; r++) {
+		for (int r = 1; r <= process.getNo(); r++) {
 			if (r == process.pid) {
 				process.broadcast("VAL", process.getX() + "," + r);
-			}else{
-
+				if(verbose )Utils.out(p.getPid(),"broadcast VAL message with payload:"+process.getX() + "," + r);
+			} else {
 				// process ID each is the coordinator of this round,
 				// either it is correct or eventually, it will be suspected
-				collectMessageFromR(r);
-				Message cM = m.get(r);
-				if (cM != null && cM.getSource() == r) {
+				Message cM = collectMessageFromR(r);
+
+				if (cM != null) {
+					if(verbose)Utils.out(p.getPid(),"receive VAL message from coordinator with payload: "+cM.getPayload());
 					String payloadMessage = cM.getPayload();
 					String[] parser = payloadMessage.split(",", 2);
-	
+
 					// parser = [VAL: v,r]
 					process.setX(Integer.parseInt(parser[0]));
-	
 				}
 			}
-
 		}
+		// decide x
 		return process.getX();
 	}
 
-	private void collectMessageFromR(int r) {
-		while (m == null || m.get(r) == null) {
-
+	private Message collectMessageFromR(int r) {
+		while (true) {
 			if (isSuspect(r)) {
 				// r is been suspected, no need to block any further
-				return;
+				return null;
+			}
+			// try to receive the message
+			synchronized (valMessages) {
+				if(valMessages.containsKey(r)){
+					return valMessages.get(r);
+				}
 			}
 
 			try {
@@ -119,7 +125,12 @@ public class StrongFailureDetector implements IFailureDetector {
 				e.printStackTrace();
 			}
 		}
+	}
 
+	public void addVALMessage(Message m2) {
+		synchronized (valMessages) {
+			valMessages.put(m2.getSource(), m2);
+		}
 	}
 
 }

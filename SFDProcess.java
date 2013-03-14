@@ -3,6 +3,9 @@ public class SFDProcess extends Process {
 
 	int pid;
 	private int x;
+	
+	// enable debug output to console by set this to true
+	private boolean verbose = false;
 	public SFDProcess(String name, int pid, int n, int x) {
 		super(name, pid, n);
 		this.pid = pid;
@@ -21,7 +24,7 @@ public class SFDProcess extends Process {
 		if (type.equals("heartbeat")) {
 			detector.receive(m);
 		} else if (type.equals("VAL") ) {
-			detector.m.put(m.getSource(),m);
+			detector.addVALMessage(m);
 		}
 	}
 	
@@ -40,7 +43,7 @@ public class SFDProcess extends Process {
 
 	private void Consensus() {
 		int x = detector.Consensus();
-		Utils.out("End of consensus, "+x+" is decided");
+		if(verbose )Utils.out("End of consensus, "+x+" is decided");
 	}
 
 	int getX() {
